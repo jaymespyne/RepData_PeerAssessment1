@@ -1,0 +1,119 @@
+---
+title: "PA1_template"
+author: "Jaymes Pyne"
+date: "10/27/2020"
+output: md_document
+---
+# Reproducible Research: Week 2 Assignment (PA1_Template)
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup Code
+
+```{r steps, echo=T} 
+library(ggplot2)
+library(plyr)
+
+setwd('C:\\Users\\Jaymes Pyne\\Google Drive\\1_Stanford_Pyne\\Classes\\Coursera\\Data_Science_Specialization\\5 Reproducible Research')
+
+  steps<-read.csv('./2_Data/activity.csv',header=T)
+  stepsc<-steps[!is.na(steps),]
+  steps$date<-as.Date(steps$date,"%Y-%m-%d")
+```
+
+## Histogram of Number of Steps Taken Each Day (Missing Values Removed)
+```{r,echo=T}
+  stepspd<-aggregate(x=steps[c("steps")],by=list(date=steps$date),
+                     na.rm=T,FUN=sum,nfrequency=1)
+  hist(stepspd$steps,xlab="Steps",main="Total Steps Per Day")
+```
+
+## Summary Statistics of Steps Taken Per Day (MIssing Values Removed)
+
+```{r stepspd, echo=T}
+summary(stepspd$steps)
+```
+
+## Average Daily Activity Pattern (Missing Values Removed)
+
+```{r, echo=T}
+stepsap<-aggregate(x=steps[c("steps")],by=list(interval=steps$interval),na.rm=T,mean)
+ggplot(stepsap, aes(interval,steps))+
+	 geom_line()+
+	 labs(x="Interval",y="Average Steps Taken",title="Average Steps Per Interval Across All Days")+
+	 theme_bw()
+```
+
+Interval 835 has the most number of steps on average across days.
+
+# With Imputed Missing Values
+
+## First, count all the NAs in the dataset
+
+```{r,echo=T}
+sapply(steps,function(x) sum(is.na(x)))
+```
+
+## Next, impute missing values with the mean by interval
+
+```{r,echo=T}
+imputem<-function(x) replace(x,is.na(x),mean(x,na.rm=T))
+steps2<-ddply(steps,~interval,transform,steps=imputem(steps))
+```
+
+## Histogram of total steps taken per day (Imputed Missing Values)
+```{r,echo=T}
+stepspd2<-aggregate(x=steps2[c("steps")],by=list(date=steps2$date),na.rm=T,FUN=sum,nfrequency=1)
+hist(stepspd2$steps,xlab="Steps",main="Total Steps Per Day (Mean-Imputed NAs)")
+```
+
+### Compared to listwise deletion of NAs
+```{r,echo=T}
+hist(stepspd$steps,xlab="Steps",main="Total Steps Per Day (Mean-Imputed NAs)")
+```
+
+## Summary statistics of steps taken per day (mean-imputed NAs)
+
+```{r,echo=T}
+summary(stepspd2$steps)
+```
+
+### Compared to listwise deletion of NAs
+
+```{r,echo=T}
+summary(stepspd$steps)
+```
+
+#Weekdays vs. Weekends
+
+##Plot of Number of Steps Taken in Weekdays and Weekend	
+
+```{r,echo=T}
+steps2$dow<-weekdays(as.Date(steps2$date))
+steps2$wknd<-factor(steps2$dow,
+			levels=c("Monday","Tuesday","Wednesday",
+				   "Thursday","Friday","Saturday","Sunday"),
+			labels=c("Weekday","Weekday","Weekday",
+				   "Weekday","Weekday","Weekend","Weekend"))
+
+stepsap2<-aggregate(x=steps2[c("steps")],by=list(interval=steps$interval,wknd=steps2$wknd),na.rm=T,mean)
+ggplot(stepsap2, aes(interval,steps))+
+	 geom_line()+
+	 labs(x="Interval",y="Average Steps Taken",title="Average Steps Per Interval By Weekdays and Weekends")+
+	 facet_grid(.~wknd) + facet_grid(rows=vars(wknd))+
+	 theme_bw()
+```
+
+
+
+
+
+
+
+
+
+
+
+
